@@ -18,7 +18,7 @@ let hdeps = p: with p; [
   ];
 in
 stdenv.mkDerivation rec {
-  name = "silly-planet";
+  name = "purescript-haskell-news";
 
   ghc = pkgs.haskell.packages.ghc822.ghcWithPackages hdeps;
 
