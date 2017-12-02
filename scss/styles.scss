@@ -20,7 +20,72 @@ body {
     line-height: 1.5rem;
 }
 
-.purescript {
+h1,h2,h3 {
+    margin: 0;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: .1rem;
+    word-spacing: .2rem;
+}
+
+header {
+    padding: 1.5rem;
+    font-size: 2rem;
+    line-height: 2.6rem;
+    text-align: center;
+    background-color: #1d222d;
+}
+
+nav a {
+    color: #fff;
+    font-weight: 300;
+    text-transform: uppercase;
+    text-decoration: none;
+
+    &.selected {
+        font-size: 2rem;
+    }
+
+    &:hover {
+        text-decoration: underline;
+    }
+
+    &:hover, &:visited {
+        color: #fff;
+    }
+}
+
+.pipe {
+    background-color: #fff;
+    width: 1px;
+    height: 2rem;
+    margin: 0 1rem;
+
+    &:last-of-type {
+        display: none;
+    }
+}
+
+main > * {
+    display: none;
+
+    // show the last view by default
+    &:last-child {
+        display: flex;
+    }
+
+    // show the current view - current is determined by target/href
+    &:target {
+        display: flex;
+
+        // hide all views after the current one
+        & ~ * {
+            display: none;
+        }
+    }
+}
+
+#purescript {
     color: #000;
 
     a {
@@ -42,15 +107,15 @@ body {
 
 }
 
-.haskell {
-    color: 333;
+#haskell {
+    color: #333;
 
     a {
         color: #5d4f85;
         text-decoration: none;
 
         &:hover, &:visited, &:focus {
-            color: #3b3255;
+            color: darken(#3b3255, 5%);
         }
 
         &:hover {
@@ -63,41 +128,8 @@ body {
     }
 }
 
-h1,h2,h3 {
-    margin: 0;
-    font-weight: 400;
-    text-transform: uppercase;
-    letter-spacing: .1rem;
-    word-spacing: .2rem;
-}
 
-header {
-    padding: 2rem;
-    line-height: 2.6rem;
-    text-align: center;
-}
-
-a.nav {
-    color: #fff;
-    font-weight: 400;
-
-    &.selected {
-        font-size: 2rem;
-    }
-
-    &:hover, &:visited {
-        color: #fff;
-    }
-}
-
-.pipe {
-    color: #fff;
-    font-size: 2rem;
-    padding: 0 .5rem;
-}
-
-main {
-    display: flex;
+.view {
     flex-flow: row wrap;
     justify-content: flex-start;
     padding-top: 1rem;
@@ -123,8 +155,23 @@ time {
     color: #333;
 }
 
-@media (min-width: 769px) {
+@media(min-width: 300px) {
     section { width: 100%; }
+
+    nav {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .pipe { display: none; }
+}
+
+@media (min-width: 769px) {
+    nav {
+        display: inline-flex;
+        flex-direction: row;
+    }
+    .pipe { display: unset; }
 }
 
 @media (min-width: 1024px) {
