@@ -1,0 +1,136 @@
+@import "normalize";
+@import "https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400";
+
+html {
+    box-sizing: border-box;
+    height: 100%;
+    font-size: 16px;
+}
+
+*, *:before, *:after {
+    box-sizing: inherit;
+}
+
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+
+    font-family: 'Source Sans Pro', sans-serif;
+    line-height: 1.5rem;
+}
+
+.purescript {
+    color: #000;
+
+    a {
+        color: #c4953a;
+        text-decoration: none;
+
+        &:hover, &:visited {
+            color: #7b5904;
+        }
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    header {
+        background-color: #1d222d;
+    }
+
+}
+
+.haskell {
+    color: 333;
+
+    a {
+        color: #5d4f85;
+        text-decoration: none;
+
+        &:hover, &:visited, &:focus {
+            color: #3b3255;
+        }
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    header {
+        background-color: #2c1e37
+    }
+}
+
+h1,h2,h3 {
+    margin: 0;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: .1rem;
+    word-spacing: .2rem;
+}
+
+header {
+    padding: 2rem;
+    line-height: 2.6rem;
+    text-align: center;
+}
+
+a.nav {
+    color: #fff;
+    font-weight: 400;
+
+    &.selected {
+        font-size: 2rem;
+    }
+
+    &:hover, &:visited {
+        color: #fff;
+    }
+}
+
+.pipe {
+    color: #fff;
+    font-size: 2rem;
+    padding: 0 .5rem;
+}
+
+main {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: flex-start;
+    padding-top: 1rem;
+}
+
+section {
+    padding: 1rem;
+}
+
+h3 {
+    border-bottom: 1px solid rgba(0,0,0,.3);
+}
+
+ul {
+    margin: 0;
+    padding: 1rem 0 0 1rem;
+    list-style: disc outside none;
+}
+
+time {
+    font-size: .85rem;
+    font-style: italic;
+    color: #333;
+}
+
+@media (min-width: 769px) {
+    section { width: 100%; }
+}
+
+@media (min-width: 1024px) {
+    section { width: 50%; }
+}
+
+@media (min-width: 1216px) {
+    section { width: 33%; }
+}

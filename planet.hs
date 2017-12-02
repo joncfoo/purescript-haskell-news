@@ -266,14 +266,15 @@ htmlTemplate = [r|<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PureScript Planet</title>
-<style>
-/* sauce: https://codepen.io/joncfoo/pen/ooaExy */
-@import"https://fonts.googleapis.com/css?family=Roboto:300,400";html{box-sizing:border-box;height:100%;font-size:16px}*,*:after,*:before{box-sizing:inherit}body{height:100%;margin:0;padding:0;background-color:#f5f5f5;color:#777;font-family:'Roboto', sans-serif;line-height:1.5rem}h1,h2,h3{margin:0;font-weight:400;text-transform:uppercase;letter-spacing:0.2rem;word-spacing:0.25rem}a{color:#c4953a;text-decoration:none}a:hover{color:#755923;text-decoration:none}a:visited{color:#755923}header{padding:2rem;line-height:2.6rem;background-color:#1d222d;color:#fff;text-align:center}main{display:-webkit-box;display:-ms-flexbox;display:flex;-ms-flex-flow:row wrap;flex-flow:row wrap;-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;padding-top:1rem}section{padding:1rem}h3{border-bottom:1px solid rgba(0, 0, 0, 0.3)}ul{margin:0;padding:1rem 0 0 1rem;list-style:disc outside none}time{font-size:0.85rem;font-style:italic}@media (min-width: 769px){section{width:100%}}@media (min-width: 1024px){section{width:50%}}@media (min-width: 1216px){section{width:33%}}
-</style>
+<title>News</title>
+<link rel="stylesheet" href="styles.css">
 </head>
-<body>
-<header><h1>PureScript Planet</h1></header>
+<body class="purescript">
+<header>
+  <a class="nav selected" data-value="purescript" href="#">PureScript</a>
+  <span class="pipe">|</span>
+  <a class="nav" data-value="haskell" href="#">Haskell</a>
+</header>
 <main>
   {{#sections}}
     <section>

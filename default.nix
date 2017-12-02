@@ -14,6 +14,7 @@ let hdeps = p: with p; [
     microstache
     protolude
     raw-strings-qq
+    split
     time
   ];
 in
@@ -22,7 +23,10 @@ stdenv.mkDerivation rec {
 
   ghc = pkgs.haskell.packages.ghc822.ghcWithPackages hdeps;
 
-  buildInputs = [ ghc ];
+  buildInputs = [
+    ghc
+    sassc
+  ];
 
   env = buildEnv {
     name = name;
