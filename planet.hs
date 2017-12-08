@@ -1,80 +1,79 @@
 #! /usr/bin/env runghc
 
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE LambdaCase            #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NamedFieldPuns        #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE QuasiQuotes           #-}
 
 import Protolude
 
-import Data.Aeson (ToJSON, object, (.=))
 import qualified Data.ByteString.Base64.URL as B64
-import Data.List (zipWith4)
-import Data.Sequence (Seq)
-import qualified Data.Sequence as Seq
-import Data.String (String)
-import Data.Time (UTCTime, addUTCTime, defaultTimeLocale, formatTime, getCurrentTime, iso8601DateFormat, parseTimeM)
-import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
-import Data.Time.Format.Human (humanReadableTime')
-import Lens.Micro.Platform ((^..), (<&>), traversed)
-import Lens.Micro.Aeson (_Integral, _String, _Value, key, values)
-import Network.HTTP.Client (HttpException, Manager, httpLbs, parseRequest, requestHeaders, responseBody)
+import qualified Data.Sequence              as Seq
+
+import Data.Aeson              (FromJSON, ToJSON, object, (.=))
+import Data.List               (zipWith4)
+import Data.Sequence           (Seq)
+import Data.String             (String, fromString)
+import Data.Time               (UTCTime, addUTCTime, defaultTimeLocale, formatTime, getCurrentTime, iso8601DateFormat,
+                                parseTimeM)
+import Data.Time.Clock.POSIX   (posixSecondsToUTCTime)
+import Data.Time.Format.Human  (humanReadableTime')
+import Lens.Micro.Aeson        (key, values, _Integral, _String, _Value)
+import Lens.Micro.Platform     (traversed, (<&>), (^..))
+import Network.HTTP.Client     (HttpException, Manager, httpLbs, parseRequest, requestHeaders, responseBody)
 import Network.HTTP.Client.TLS (newTlsManager)
-import Text.Feed.Import (parseFeedSource)
-import Text.Feed.Query (getFeedItems, getItemEnclosure, getItemLink, getItemTitle, getItemPublishDate)
-import Text.Microstache (compileMustacheText, renderMustache)
-import Text.RawString.QQ (r)
+import Text.Feed.Import        (parseFeedSource)
+import Text.Feed.Query         (getFeedItems, getItemEnclosure, getItemLink, getItemPublishDate, getItemTitle)
+import Text.Microstache        (compileMustacheText, renderMustache)
+import Text.RawString.QQ       (r)
 
--- TODO
--- youtube
--- twitter
-
-purescript :: Section
+purescript :: Page
 purescript =
-  Section "purescript" $ Seq.fromList
-  [ SubSection "Blog Posts"
+  Page "purescript" $ Seq.fromList
+  [ Group "Blog Posts"
     [ RSS "http://blog.functorial.com/feed.rss"
     , RSS "https://qiita.com/kimagure/feed.atom"
     , RSS "http://mutanatum.com/atom.xml"
     ]
-  , SubSection "Github" [Github "purescript"]
-  , SubSection "Reddit" [Reddit "purescript"]
-  , SubSection "Stack Overflow" [Stackoverflow "purescript"]
-  , SubSection "Google Groups" [Googlegroup "purescript"]
-  , SubSection "Releases" [PSReleases]
+  , Group "Github" [Github "purescript"]
+  , Group "Reddit" [Reddit "purescript"]
+  , Group "Stack Overflow" [Stackoverflow "purescript"]
+  , Group "Google Groups" [Googlegroup "purescript"]
+  , Group "Releases" [PSReleases]
   ]
 
-haskell :: Section
+haskell :: Page
 haskell =
-  Section "haskell" $ Seq.fromList
-  [ SubSection "Blog Posts"
+  Page "haskell" $ Seq.fromList
+  [ Group "Blog Posts"
     [ RSS "https://kseo.github.io/atom.xml"
     ]
-  , SubSection "Reddit" [Reddit "haskell"]
-  , SubSection "Stack Overflow" [Stackoverflow "haskell"]
+  , Group "Reddit" [Reddit "haskell"]
+  , Group "Stack Overflow" [Stackoverflow "haskell"]
   ]
 
-podcasts :: Section
+podcasts :: Page
 podcasts =
-  Section "podcasts" $ Seq.fromList
-  [ SubSection "FP Podcasts"
+  Page "podcasts" $ Seq.fromList
+  [ Group "FP Podcasts"
     [ Podcast "http://feeds.soundcloud.com/users/soundcloud:users:239787249/sounds.rss"  -- LambdaCast
     , Podcast "https://www.functionalgeekery.com/feed/mp3/" -- Functional Geekery
     , Podcast "http://www.magicreadalong.com/episode?format=rss" -- Magic Read Along
     , Podcast "http://www.haskellcast.com/feed.xml" -- Haskell Cast
     ]
-  , SubSection "World Stories"
+  , Group "World Stories"
     [ Podcast "https://www.npr.org/rss/podcast.php?id=510324" -- NPR: Rough translation
     , Podcast "http://podcasts.files.bbci.co.uk/p02nq0lx.rss" -- BBC: The Documentary
     , Podcast "http://www.radiolab.org/feeds/podcast/"  -- RadioLab
     ]
-  , SubSection "Music"
+  , Group "Music"
     [ Podcast "http://www.mennodejong.com/cloudcast/podcast.xml"  -- Menno de Jong
     , Podcast "https://www.thisisdistorted.com/repository/xml/paulvandyk1446481004.xml"  -- Paul van Dyk
     , Podcast "http://www.kyauandalbert.com/EuphonicSessions-Podcast-KyauandAlbert.xml"  -- Kyau and Albert
@@ -91,34 +90,39 @@ main :: IO ()
 main = do
   httpManager <- newTlsManager
   let
-    eTmpl = compileMustacheText "html" htmlTemplate
+    eTmpl
+      = compileMustacheText "html" htmlTemplate
   when (isLeft eTmpl) (panic $ show eTmpl)
   let
     Right tmpl
       = eTmpl
-    sections =
-      [purescript, haskell, podcasts]
+    pages
+      = [purescript, haskell, podcasts]
     titles
-      = fmap (\Section{title}-> object $ ["title" .= (title :: Text)]) sections
+      = (\Page{title}-> object $ ["title" .= (title :: Text)])
+        <$> pages
 
-  eResult <- (runFetch httpManager . mapM fetchSection) sections
+  eResult <- (runFetch httpManager . mapM fetchSection) pages
   case eResult of
     Left errs ->
       panic (show errs)
     Right displaySections ->
-      putLText . renderMustache tmpl $ object [ "titles" .= titles
-                                              , "sections" .= rotate' 1 displaySections]
+      -- rotate pages since the CSS needs the first page to actually be last (due to how selectors work)
+      object ["titles" .= titles, "pages" .= rotate' 1 displaySections]
+      & renderMustache tmpl
+      & putLText
+
 runFetch :: Manager -> ReaderT Manager (ExceptT Error IO) a -> IO (Either Error a)
 runFetch m f =
   runExceptT (runReaderT f m)
 
-fetchSection :: FetchM m => Section -> m DisplaySection
-fetchSection Section{title,subsections} = do
-  dss <- mapM fetchSubSection subsections
+fetchSection :: Fetch m => Page -> m DisplaySection
+fetchSection Page{title,groups} = do
+  dss <- mapM fetchSubSection groups
   pure (DisplaySection title dss)
 
-fetchSubSection :: FetchM m => SubSection -> m DisplaySubSection
-fetchSubSection SubSection{title,sources} = do
+fetchSubSection :: Fetch m => Group -> m DisplaySubSection
+fetchSubSection Group{title,sources} = do
   currentTime <- liftIO getCurrentTime
   ss <- mapM fetch sources
         <&> mconcat
@@ -127,7 +131,7 @@ fetchSubSection SubSection{title,sources} = do
         <&> fmap (\(Item t l e d) -> DisplayItem t l e d (humanReadableTime' currentTime d))
   pure (DisplaySubSection title ss)
 
-httpGet :: FetchM m => Text -> m LByteString
+httpGet :: Fetch m => Text -> m LByteString
 httpGet url = do
   manager <- ask
   let
@@ -149,8 +153,8 @@ httpGet url = do
     Right response ->
       pure (responseBody response)
 
-fetch :: FetchM m => Source Text -> m (Seq Item)
-fetch (Github keyword) = do
+fetch :: Fetch m => Source -> m (Seq Item)
+fetch (Github (Keyword language)) = do
   let
     sevenDaysAgo =
       60 * 60 * 24 * (-7)
@@ -159,61 +163,71 @@ fetch (Github keyword) = do
           <&> formatTime defaultTimeLocale "%Y-%m-%d"
           <&> toS
   let
-    url = "https://api.github.com/search/repositories?q=pushed:%3E"
-          <> date <> "+language:" <> keyword <> "&sort=updated&order=desc"
+    url
+      = "https://api.github.com/search/repositories?q=pushed:%3E"
+        <> date <> "+language:" <> language <> "&sort=updated&order=desc"
   json <- httpGet url
   let
     parseTime :: String -> Maybe UTCTime
-    parseTime =
-      parseTimeM False defaultTimeLocale (iso8601DateFormat (Just "%H:%M:%SZ"))
-    results =
-      json ^.. key "items" . values
-    titles =
-      results ^.. traversed . _Value . key "name" . _String
-    links =
-      results ^.. traversed . _Value . key "html_url" . _String
-    dates =
-      results ^.. traversed . _Value . key "updated_at" . _String
-      & fmap (parseTime . toS)
-      & catMaybes
+    parseTime
+      = parseTimeM False defaultTimeLocale (iso8601DateFormat (Just "%H:%M:%SZ"))
+    results
+      = json ^.. key "items" . values
+    titles
+      = results ^.. traversed . _Value . key "name" . _String
+    links
+      = results ^.. traversed . _Value . key "html_url" . _String
+    dates
+      = results ^.. traversed . _Value . key "updated_at" . _String
+        & fmap (parseTime . toS)
+        & catMaybes
 
   unless (length titles == length links && length links == length dates) $
     throwError (GithubE "length of pieces were not the same")
 
   pure (mkItems titles links dates)
 
-fetch (Reddit subreddit) = do
+fetch (Reddit (Keyword subreddit)) = do
   let
-    url = "https://www.reddit.com/r/" <> subreddit <> "/new/.json"
+    url
+      = "https://www.reddit.com/r/" <> subreddit <> "/new/.json"
   json <- httpGet url
   let
-    results =
-      json ^.. key "data" . key "children" . values . key "data"
-    titles =
-      results ^.. traversed . key "title" . _String
-    links =
-      results ^.. traversed . key "permalink" . _String
-      & fmap ("https://www.reddit.com" <>)
+    results
+      = json ^.. key "data" . key "children" . values . key "data"
+    titles
+      = results ^.. traversed . key "title" . _String
+    links
+      = results ^.. traversed . key "permalink" . _String
+        <&> ("https://www.reddit.com" <>)
     dates
       = results ^.. traversed . key "created_utc" . _Integral
-        & fmap (posixSecondsToUTCTime . fromInteger)
+        <&> (posixSecondsToUTCTime . fromInteger)
 
   unless (length titles == length links && length links == length dates) $
     throwError (RedditE "length of pieces were not the same")
 
   pure (mkItems titles links dates)
 
-fetch PSReleases = do
+fetch PSReleases =
   fromFeed "https://github.com/purescript/purescript/releases.atom" False
-  >>= (pure . fmap addlink)
+  <&> fmap addlink
   where
     addlink (Item t l e d) = Item t ("https://github.com" <> l) e d
 
-fetch (Stackoverflow keyword) =
-  fromFeed ("https://stackoverflow.com/feeds/tag?tagnames=" <> keyword <> "&sort=newest") False
+fetch (Stackoverflow (Keyword tag)) =
+  let
+    url
+      = URL $ "https://stackoverflow.com/feeds/tag?tagnames=" <> tag <> "&sort=newest"
+  in
+    fromFeed url False
 
-fetch (Googlegroup keyword) =
-  fromFeed ("https://groups.google.com/forum/feed/" <> keyword <> "/topics/atom.xml?num=10") False
+fetch (Googlegroup (Keyword ggroup)) =
+  let
+    url
+      = URL $ "https://groups.google.com/forum/feed/" <> ggroup <> "/topics/atom.xml?num=10"
+  in
+    fromFeed url False
 
 fetch (RSS url) =
   fromFeed url False
@@ -221,42 +235,42 @@ fetch (RSS url) =
 fetch (Podcast url) =
   fromFeed url True
 
-fromFeed :: FetchM m => Text -> Bool -> m (Seq Item)
-fromFeed url enclosure = do
+fromFeed :: Fetch m => URL -> Bool -> m (Seq Item)
+fromFeed (URL url) enclosure = do
   mFeed <- parseFeedSource <$> httpGet url
 
-  when (isNothing mFeed) (throwError . FeedE $ "Failed to parse feed: " <> url)
+  when (isNothing mFeed) $
+    (throwError . FeedE $ "Failed to parse feed: " <> url)
 
   let
-    Just feed =
-      mFeed
-    toItem (Just t, Just l, e, Just dt) =
-      Just (Item t l (if enclosure then e else Nothing) dt)
-    toItem _ =
-      Nothing
-    fromEnclosure i =
-      case getItemEnclosure i of
-        Just (uri, _, _) -> Just uri
-        _ -> Nothing
-    items' =
-      feed
-      & getFeedItems
-      & fmap (\i -> (getItemTitle i, getItemLink i, fromEnclosure i, join $ getItemPublishDate i))
-      & fmap toItem
-      & catMaybes
-      & Seq.fromList
+    Just feed
+      = mFeed
+    toItem (Just t, Just l, e, Just dt)
+      = Just (Item t l (if enclosure then e else Nothing) dt)
+    toItem _
+      = Nothing
+    fromEnclosure i
+      = case getItemEnclosure i of
+          Just (uri, _, _) -> Just uri
+          _                -> Nothing
+    items'
+      = getFeedItems feed
+        <&> (\i -> (getItemTitle i, getItemLink i, fromEnclosure i, join $ getItemPublishDate i))
+        <&> toItem
+        & catMaybes
+        & Seq.fromList
   pure items'
 
--- nasty! :D
 mkItems :: [Text] -> [Text] -> [UTCTime] -> Seq Item
 mkItems titles links dates =
-  Seq.fromList $ zipWith4 Item titles links (repeat Nothing) dates
+  zipWith4 Item titles links (repeat Nothing) dates
+  & Seq.fromList
 
 rotate' :: Int -> [a] -> [a]
 rotate' _ [] = []
 rotate' n xs = zipWith const (drop n (cycle xs)) xs
 
-type FetchM m
+type Fetch m
   = ( MonadReader Manager m
     , MonadError Error m
     , MonadIO m
@@ -270,29 +284,43 @@ data Error
   | RedditE Text
   deriving Show
 
-data Source a
-  = Github a
-  | Googlegroup a
+newtype Keyword = Keyword Text
+  deriving (Generic, FromJSON)
+
+instance IsString Keyword where
+  fromString = Keyword . toS
+
+newtype URL = URL Text
+  deriving (Generic, FromJSON)
+
+-- this is kinda not cool?
+instance IsString URL where
+  fromString = URL . toS
+
+data Source
+  = Github Keyword
+  | Googlegroup Keyword
   | Pursuit
-  | Reddit a
-  | Podcast a
+  | Reddit Keyword
+  | Podcast URL
   | PSReleases
-  | RSS a
-  | Stackoverflow a
-  | Twitter a
-  | Youtube a
+  | RSS URL
+  | Stackoverflow Keyword
+  | Twitter Text
+  | Youtube Text
+  deriving (Generic, FromJSON)
 
-data SubSection =
-  SubSection
+data Page =
+  Page
+  { title  :: Text
+  , groups :: Seq Group
+  } deriving (Generic, FromJSON)
+
+data Group =
+  Group
   { title   :: Text
-  , sources :: [Source Text]
-  }
-
-data Section =
-  Section
-  { title       :: Text
-  , subsections :: Seq SubSection
-  }
+  , sources :: [Source]
+  } deriving (Generic, FromJSON)
 
 data Item
   = Item
@@ -300,12 +328,12 @@ data Item
   , link      :: Text
   , enclosure :: Maybe Text
   , datetime  :: UTCTime
-  }
+  } deriving (Generic, FromJSON)
 
 data DisplaySection =
   DisplaySection
-  { title       :: Text
-  , subsections :: Seq DisplaySubSection
+  { title  :: Text
+  , groups :: Seq DisplaySubSection
   } deriving (Generic, ToJSON)
 
 data DisplaySubSection =
@@ -342,9 +370,9 @@ htmlTemplate = [r|<!doctype html>
     </nav>
 </header>
 <main role="main">
-  {{#sections}}
+  {{#pages}}
   <div id="{{title}}" class="view">
-    {{#subsections}}
+    {{#groups}}
     <section>
       <h3>{{title}}</h3>
       <ul>
@@ -353,9 +381,9 @@ htmlTemplate = [r|<!doctype html>
         {{/items}}
       </ul>
     </section>
-    {{/subsections}}
+    {{/groups}}
   </div>
-  {{/sections}}
+  {{/pages}}
 </main>
 </body>
 </html>
