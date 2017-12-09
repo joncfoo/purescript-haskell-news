@@ -135,6 +135,12 @@ main > * {
     padding-top: 1rem;
 }
 
+#player {
+    display: flex;
+    width: 100%;
+    padding: 1rem;
+}
+
 section {
     padding: 1rem;
 }
@@ -163,7 +169,17 @@ time {
         flex-direction: column;
         align-items: center;
     }
+
     .pipe { display: none; }
+
+    #player {
+        flex-direction: column;
+        & label {
+            margin-right: unset;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+    }
 }
 
 @media (min-width: 769px) {
@@ -171,7 +187,18 @@ time {
         display: inline-flex;
         flex-direction: row;
     }
+
     .pipe { display: unset; }
+
+    #player {
+        flex-direction: unset;
+        justify-content: center;
+        & label {
+            text-align: unset;
+            margin-bottom: unset;
+            margin-right: 1rem;
+        }
+    }
 }
 
 @media (min-width: 1024px) {

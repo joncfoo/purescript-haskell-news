@@ -88,6 +88,8 @@ podcasts =
 
 main :: IO ()
 main = do
+  css <- readFile "output/styles.css"
+  javascript <- readFile "js/snippet.js"
   httpManager <- newTlsManager
   let
     eTmpl
@@ -108,7 +110,11 @@ main = do
       panic (show errs)
     Right displaySections ->
       -- rotate pages since the CSS needs the first page to actually be last (due to how selectors work)
-      object ["titles" .= titles, "pages" .= rotate' 1 displaySections]
+      object [ "titles" .= titles
+             , "pages" .= rotate' 1 displaySections
+             , "css" .= css
+             , "javascript" .= javascript
+             ]
       & renderMustache tmpl
       & putLText
 
@@ -116,12 +122,12 @@ runFetch :: Manager -> ReaderT Manager (ExceptT Error IO) a -> IO (Either Error 
 runFetch m f =
   runExceptT (runReaderT f m)
 
-fetchSection :: Fetch m => Page -> m DisplaySection
+fetchSection :: Fetch m => Page -> m DisplayPage
 fetchSection Page{title,groups} = do
   dss <- mapM fetchSubSection groups
-  pure (DisplaySection title dss)
+  pure (DisplayPage title dss (title == "podcasts"))
 
-fetchSubSection :: Fetch m => Group -> m DisplaySubSection
+fetchSubSection :: Fetch m => Group -> m DisplayGroup
 fetchSubSection Group{title,sources} = do
   currentTime <- liftIO getCurrentTime
   ss <- mapM fetch sources
@@ -129,7 +135,7 @@ fetchSubSection Group{title,sources} = do
         <&> Seq.sortBy (comparing $ Down . datetime)
         <&> Seq.take 10
         <&> fmap (\(Item t l e d) -> DisplayItem t l e d (humanReadableTime' currentTime d))
-  pure (DisplaySubSection title ss)
+  pure (DisplayGroup title ss)
 
 httpGet :: Fetch m => Text -> m LByteString
 httpGet url = do
@@ -330,14 +336,15 @@ data Item
   , datetime  :: UTCTime
   } deriving (Generic, FromJSON)
 
-data DisplaySection =
-  DisplaySection
+data DisplayPage =
+  DisplayPage
   { title  :: Text
-  , groups :: Seq DisplaySubSection
+  , groups :: Seq DisplayGroup
+  , isPodcasts :: Bool
   } deriving (Generic, ToJSON)
 
-data DisplaySubSection =
-  DisplaySubSection
+data DisplayGroup =
+  DisplayGroup
   { title :: Text
   , items :: Seq DisplayItem
   } deriving (Generic, ToJSON)
@@ -358,7 +365,9 @@ htmlTemplate = [r|<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>News</title>
-<link rel="stylesheet" href="styles.css">
+<style>
+{{{css}}}
+</style>
 </head>
 <body>
 <header>
@@ -372,6 +381,25 @@ htmlTemplate = [r|<!doctype html>
 <main role="main">
   {{#pages}}
   <div id="{{title}}" class="view">
+    {{#isPodcasts}}
+    <div id="player">
+        <label>Playback Rate
+            <select id="playbackRate">
+                <option value="1" selected>1x</option>
+                <option value="1.2">1.2x</option>
+                <option value="1.3">1.3x</option>
+                <option value="1.4">1.4x</option>
+                <option value="1.5">1.5x</option>
+                <option value="1.6">1.6x</option>
+                <option value="1.7">1.7x</option>
+                <option value="1.8">1.8x</option>
+                <option value="1.9">1.9x</option>
+                <option value="2">2x</option>
+            </select>
+        </label>
+        <audio controls></audio>
+    </div>
+    {{/isPodcasts}}
     {{#groups}}
     <section>
       <h3>{{title}}</h3>
@@ -385,6 +413,9 @@ htmlTemplate = [r|<!doctype html>
   </div>
   {{/pages}}
 </main>
+<script>
+{{{javascript}}}
+</script>
 </body>
 </html>
 |]
