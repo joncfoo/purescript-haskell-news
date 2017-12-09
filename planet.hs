@@ -54,6 +54,7 @@ haskell =
   Page "haskell" $ Seq.fromList
   [ Group "Blog Posts"
     [ RSS "https://kseo.github.io/atom.xml"
+    , RSS "https://deque.blog/feed/"
     ]
   , Group "Reddit" [Reddit "haskell"]
   , Group "Stack Overflow" [Stackoverflow "haskell"]
