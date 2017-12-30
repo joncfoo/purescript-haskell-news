@@ -1,7 +1,7 @@
 #! /usr/bin/env runghc
 
 {-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -17,7 +17,7 @@ import Protolude
 import qualified Data.ByteString.Base64.URL as B64
 import qualified Data.Sequence              as Seq
 
-import Data.Aeson              (FromJSON, ToJSON, object, (.=))
+import Data.Aeson              (ToJSON, encode)
 import Data.List               (zipWith4)
 import Data.Sequence           (Seq)
 import Data.String             (String, fromString)
@@ -31,7 +31,6 @@ import Network.HTTP.Client     (HttpException, Manager, httpLbs, parseRequest, r
 import Network.HTTP.Client.TLS (newTlsManager)
 import Text.Feed.Import        (parseFeedSource)
 import Text.Feed.Query         (getFeedItems, getItemEnclosure, getItemLink, getItemPublishDate, getItemTitle)
-import Text.Microstache        (compileMustacheText, renderMustache)
 import Text.RawString.QQ       (r)
 
 purescript :: Page
@@ -41,6 +40,7 @@ purescript =
     [ RSS "http://blog.functorial.com/feed.rss"
     , RSS "https://qiita.com/kimagure/feed.atom"
     , RSS "http://mutanatum.com/atom.xml"
+    , RSS "https://liamgoodacre.github.io/feed.xml"
     ]
   , Group "Github" [Github "purescript"]
   , Group "Reddit" [Reddit "purescript"]
@@ -64,60 +64,44 @@ podcasts :: Page
 podcasts =
   Page "podcasts" $ Seq.fromList
   [ Group "FP Podcasts"
-    [ Podcast "http://feeds.soundcloud.com/users/soundcloud:users:239787249/sounds.rss"  -- LambdaCast
-    , Podcast "https://www.functionalgeekery.com/feed/mp3/" -- Functional Geekery
-    , Podcast "http://www.magicreadalong.com/episode?format=rss" -- Magic Read Along
-    , Podcast "http://www.haskellcast.com/feed.xml" -- Haskell Cast
+    [ Podcast_ "http://feeds.soundcloud.com/users/soundcloud:users:239787249/sounds.rss"  -- LambdaCast
+    , Podcast_ "https://www.functionalgeekery.com/feed/mp3/" -- Functional Geekery
+    , Podcast_ "http://www.magicreadalong.com/episode?format=rss" -- Magic Read Along
+    , Podcast_ "http://www.haskellcast.com/feed.xml" -- Haskell Cast
     ]
   , Group "World Stories"
-    [ Podcast "https://www.npr.org/rss/podcast.php?id=510324" -- NPR: Rough translation
-    , Podcast "http://podcasts.files.bbci.co.uk/p02nq0lx.rss" -- BBC: The Documentary
-    , Podcast "http://www.radiolab.org/feeds/podcast/"  -- RadioLab
+    [ Podcast_ "https://www.npr.org/rss/podcast.php?id=510324" -- NPR: Rough translation
+    , Podcast_ "http://podcasts.files.bbci.co.uk/p02nq0lx.rss" -- BBC: The Documentary
+    , Podcast_ "http://www.radiolab.org/feeds/podcast/"  -- RadioLab
     ]
   , Group "Music"
-    [ Podcast "http://www.mennodejong.com/cloudcast/podcast.xml"  -- Menno de Jong
-    , Podcast "https://www.thisisdistorted.com/repository/xml/paulvandyk1446481004.xml"  -- Paul van Dyk
-    , Podcast "http://www.kyauandalbert.com/EuphonicSessions-Podcast-KyauandAlbert.xml"  -- Kyau and Albert
-    , Podcast "http://jaytechmusic.com/jaytechmusic/jaytechmusic.xml"  -- Jaytech
-    , Podcast "http://feeds.feedburner.com/SilkRoyalShowcase"  -- Silk Music Showcase
-    , Podcast "https://www.thisisdistorted.com/repository/xml/SolarstonePureTrance1463143743.xml" -- Solarstone
-    , Podcast "http://john00fleming.co.uk/mixes/podcasts/Nov08/podcast.xml"  -- John 00 Fleming
-    , Podcast "http://internationaldepartures.podbean.com/feed/"  -- Shane 54
-    , Podcast "https://www.thisisdistorted.com/repository/xml/1421850521.xml"  -- Roger Shah
+    [ Podcast_ "http://www.mennodejong.com/cloudcast/podcast.xml"  -- Menno de Jong
+    , Podcast_ "https://www.thisisdistorted.com/repository/xml/paulvandyk1446481004.xml"  -- Paul van Dyk
+    , Podcast_ "http://www.kyauandalbert.com/EuphonicSessions-Podcast-KyauandAlbert.xml"  -- Kyau and Albert
+    , Podcast_ "http://jaytechmusic.com/jaytechmusic/jaytechmusic.xml"  -- Jaytech
+    , Podcast_ "http://feeds.feedburner.com/SilkRoyalShowcase"  -- Silk Music Showcase
+    , Podcast_ "https://www.thisisdistorted.com/repository/xml/SolarstonePureTrance1463143743.xml" -- Solarstone
+    , Podcast_ "http://john00fleming.co.uk/mixes/podcasts/Nov08/podcast.xml"  -- John 00 Fleming
+    , Podcast_ "http://internationaldepartures.podbean.com/feed/"  -- Shane 54
+    , Podcast_ "https://www.thisisdistorted.com/repository/xml/1421850521.xml"  -- Roger Shah
     ]
   ]
 
 main :: IO ()
 main = do
-  css <- readFile "output/styles.css"
-  javascript <- readFile "js/snippet.js"
   httpManager <- newTlsManager
   let
-    eTmpl
-      = compileMustacheText "html" htmlTemplate
-  when (isLeft eTmpl) (panic $ show eTmpl)
-  let
-    Right tmpl
-      = eTmpl
     pages
       = [purescript, haskell, podcasts]
-    titles
-      = (\Page{title}-> object $ ["title" .= (title :: Text)])
-        <$> pages
 
   eResult <- (runFetch httpManager . mapM fetchSection) pages
   case eResult of
     Left errs ->
       panic (show errs)
     Right displaySections ->
-      -- rotate pages since the CSS needs the first page to actually be last (due to how selectors work)
-      object [ "titles" .= titles
-             , "pages" .= rotate' 1 displaySections
-             , "css" .= css
-             , "javascript" .= javascript
-             ]
-      & renderMustache tmpl
-      & putLText
+      displaySections
+      & encode
+      & putText . toS
 
 runFetch :: Manager -> ReaderT Manager (ExceptT Error IO) a -> IO (Either Error a)
 runFetch m f =
@@ -126,7 +110,7 @@ runFetch m f =
 fetchSection :: Fetch m => Page -> m DisplayPage
 fetchSection Page{title,groups} = do
   dss <- mapM fetchSubSection groups
-  pure (DisplayPage title dss (title == "podcasts"))
+  pure (DisplayPage title dss)
 
 fetchSubSection :: Fetch m => Group -> m DisplayGroup
 fetchSubSection Group{title,sources} = do
@@ -135,8 +119,16 @@ fetchSubSection Group{title,sources} = do
         <&> mconcat
         <&> Seq.sortBy (comparing $ Down . datetime)
         <&> Seq.take 10
-        <&> fmap (\(Item t l e d) -> DisplayItem t l e d (humanReadableTime' currentTime d))
+        <&> fmap (toDisplayItem currentTime)
   pure (DisplayGroup title ss)
+  where
+    toDisplayItem currentTime (Item t l e d) =
+      let niceTime = toS $ humanReadableTime' currentTime d
+      in case e of
+           Nothing ->
+             Link  t l d niceTime
+           Just enclosure ->
+             Podcast t l enclosure d niceTime
 
 httpGet :: Fetch m => Text -> m LByteString
 httpGet url = do
@@ -239,7 +231,7 @@ fetch (Googlegroup (Keyword ggroup)) =
 fetch (RSS url) =
   fromFeed url False
 
-fetch (Podcast url) =
+fetch (Podcast_ url) =
   fromFeed url True
 
 fromFeed :: Fetch m => URL -> Bool -> m (Seq Item)
@@ -273,10 +265,6 @@ mkItems titles links dates =
   zipWith4 Item titles links (repeat Nothing) dates
   & Seq.fromList
 
-rotate' :: Int -> [a] -> [a]
-rotate' _ [] = []
-rotate' n xs = zipWith const (drop n (cycle xs)) xs
-
 type Fetch m
   = ( MonadReader Manager m
     , MonadError Error m
@@ -292,13 +280,13 @@ data Error
   deriving Show
 
 newtype Keyword = Keyword Text
-  deriving (Generic, FromJSON)
+  deriving (Generic)
 
 instance IsString Keyword where
   fromString = Keyword . toS
 
 newtype URL = URL Text
-  deriving (Generic, FromJSON)
+  deriving (Generic)
 
 -- this is kinda not cool?
 instance IsString URL where
@@ -309,25 +297,25 @@ data Source
   | Googlegroup Keyword
   | Pursuit
   | Reddit Keyword
-  | Podcast URL
+  | Podcast_ URL
   | PSReleases
   | RSS URL
   | Stackoverflow Keyword
   | Twitter Text
   | Youtube Text
-  deriving (Generic, FromJSON)
+  deriving (Generic)
 
 data Page =
   Page
   { title  :: Text
   , groups :: Seq Group
-  } deriving (Generic, FromJSON)
+  } deriving (Generic)
 
 data Group =
   Group
   { title   :: Text
   , sources :: [Source]
-  } deriving (Generic, FromJSON)
+  } deriving (Generic)
 
 data Item
   = Item
@@ -335,13 +323,12 @@ data Item
   , link      :: Text
   , enclosure :: Maybe Text
   , datetime  :: UTCTime
-  } deriving (Generic, FromJSON)
+  } deriving (Generic)
 
 data DisplayPage =
   DisplayPage
   { title  :: Text
   , groups :: Seq DisplayGroup
-  , isPodcasts :: Bool
   } deriving (Generic, ToJSON)
 
 data DisplayGroup =
@@ -350,14 +337,21 @@ data DisplayGroup =
   , items :: Seq DisplayItem
   } deriving (Generic, ToJSON)
 
-data DisplayItem =
-  DisplayItem
-  { title        :: Text
-  , link         :: Text
-  , enclosure    :: Maybe Text
-  , time         :: UTCTime
-  , readableTime :: String
-  } deriving (Generic, ToJSON)
+data DisplayItem
+  = Link
+    { title    :: Text
+    , link     :: Text
+    , time     :: UTCTime
+    , niceTime :: Text
+    }
+  | Podcast
+    { title     :: Text
+    , link      :: Text
+    , enclosure :: Text
+    , time      :: UTCTime
+    , niceTime  :: Text
+    }
+  deriving (Generic, ToJSON)
 
 htmlTemplate :: LText
 htmlTemplate = [r|<!doctype html>
@@ -406,7 +400,7 @@ htmlTemplate = [r|<!doctype html>
       <h3>{{title}}</h3>
       <ul>
         {{#items}}
-          <li><a href="{{{link}}}" data-enclosure="{{enclosure}}">{{title}}</a> <time pubdate="{{time}}">&mdash; {{readableTime}}</time></li>
+          <li><a href="{{{link}}}" data-enclosure="{{enclosure}}">{{title}}</a> <time pubdate="{{time}}">&mdash; {{niceTime}}</time></li>
         {{/items}}
       </ul>
     </section>

@@ -11,7 +11,6 @@ let hdeps = p: with p; [
     http-client-tls
     microlens-aeson
     microlens-platform
-    microstache
     protolude
     raw-strings-qq
     split
@@ -26,6 +25,7 @@ stdenv.mkDerivation rec {
   buildInputs = [
     ghc
     sassc
+    purescript
   ];
 
   env = buildEnv {
