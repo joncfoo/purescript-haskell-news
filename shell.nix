@@ -1,37 +1,50 @@
-with import <nixpkgs> {};
-
-let hdeps = p: with p; [
-    aeson
-    authenticate-oauth
-    base64-bytestring
-    containers
-    feed_1_0_0_0
-    friendly-time
-    http-client
-    http-client-tls
-    microlens-aeson
-    microlens-platform
-    protolude
-    raw-strings-qq
-    split
-    time
-  ];
-in
-stdenv.mkDerivation rec {
-  name = "purescript-haskell-news";
-
-  ghc = pkgs.haskell.packages.ghc822.ghcWithPackages hdeps;
-
-  buildInputs = [
-    ghc
-    sassc
-    purescript
-  ];
-
-  env = buildEnv {
-    name = name;
-    paths = buildInputs;
+let
+  compiler = "ghc822";
+  config = {
+    packageOverrides = super: let self = super.pkgs; in {
+      haskell = super.haskell // {
+        packages = super.haskell.packages // {
+          "${compiler}" = super.haskell.packages.${compiler}.override {
+            overrides = self: super : {
+              feed = self.callPackage ./overrides/feed-1.0.0.0.nix {};
+              # use slightly newer pkg that fixes tests for ghc822
+              reroute = self.callPackage ./overrides/reroute-0.4.1.0.nix {};
+            };
+          };
+        };
+      };
+    };
   };
+  pkgs = import ./nixpkgs.nix { inherit config; };
+  hpkgs = pkgs.haskell.packages.${compiler}.override {
+    overrides = (self: super: {
+      ghc = super.ghc // { withPackages = super.ghc.withHoogle; };
+      ghcWithPackages = self.ghc.withPackages;
+    });
+  };
+  hdeps = with hpkgs; [
+    cabal-install
+#     alex
+#     c2hs
+#     cpphs
+#     doctest
+#     happy
+#     hscolour
 
-  shellHook = ''eval $(egrep ^export ${ghc}/bin/ghc)'';
-}
+    ghcid
+    hasktags
+    hlint
+    hoogle
+    hpack
+    stylish-haskell
+  ];
+  deps = with pkgs; [
+    binutils
+    cabal2nix
+    nix-prefetch-git
+  ];
+  silly-planet = (import ./haskell/silly-planet.nix { compiler = compiler; }).silly-planet;
+in
+silly-planet.env.overrideAttrs (oldEnv: {
+  buildInputs = (oldEnv.buildInputs or []) ++ hdeps ++ deps;
+})

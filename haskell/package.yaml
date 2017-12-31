@@ -1,0 +1,43 @@
+name: silly-planet
+version: 0.0.1
+synopsis: A simple feed aggregator
+license: ISC
+
+ghc-options:
+  - -Wall
+  - -Wincomplete-uni-patterns
+  - -Wincomplete-record-updates
+
+dependencies:
+  - base
+  - aeson
+  - authenticate-oauth
+  - base64-bytestring
+  - containers
+  - cmdargs
+  - feed == 1.0.0.0
+  - filepath
+  - friendly-time
+  - http-client
+  - http-client-tls
+  - microlens-aeson
+  - microlens-platform
+  - protolude
+  - raw-strings-qq
+  - resource-pool
+  - Spock
+  - simple-logger
+  - sqlite-simple
+  - text
+  - time
+  - wai
+  - wai-extra
+  - warp
+
+executable:
+  main: Main.hs
+  ghc-options:
+    - -O2
+    - -threaded
+    - -rtsopts
+  source-dirs: src

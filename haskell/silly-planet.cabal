@@ -1,0 +1,44 @@
+-- This file has been generated from package.yaml by hpack version 0.18.1.
+--
+-- see: https://github.com/sol/hpack
+
+name:           silly-planet
+version:        0.0.1
+synopsis:       A simple feed aggregator
+license:        ISC
+build-type:     Simple
+cabal-version:  >= 1.10
+
+executable silly-planet
+  main-is: Main.hs
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -O2 -threaded -rtsopts
+  build-depends:
+      base
+    , aeson
+    , authenticate-oauth
+    , base64-bytestring
+    , containers
+    , cmdargs
+    , feed == 1.0.0.0
+    , filepath
+    , friendly-time
+    , http-client
+    , http-client-tls
+    , microlens-aeson
+    , microlens-platform
+    , protolude
+    , raw-strings-qq
+    , resource-pool
+    , Spock
+    , simple-logger
+    , sqlite-simple
+    , text
+    , time
+    , wai
+    , wai-extra
+    , warp
+  other-modules:
+      Args
+  default-language: Haskell2010
