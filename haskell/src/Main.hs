@@ -26,7 +26,7 @@ import Data.Time               (UTCTime, addUTCTime, defaultTimeLocale, formatTi
 import Data.Time.Clock.POSIX   (posixSecondsToUTCTime)
 import Data.Time.Format.Human  (humanReadableTime')
 import Lens.Micro.Aeson        (key, values, _Integral, _String, _Value)
-import Lens.Micro.Platform     (traversed, (<&>), (^..))
+import Lens.Micro.Platform     (traversed, (^..))
 import Network.HTTP.Client     (HttpException, Manager, httpLbs, parseRequest, requestHeaders, responseBody)
 import Network.HTTP.Client.TLS (newTlsManager)
 import Text.Feed.Import        (parseFeedSource)

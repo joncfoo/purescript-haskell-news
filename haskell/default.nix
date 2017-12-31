@@ -6,7 +6,7 @@
 }:
 mkDerivation {
   pname = "silly-planet";
-  version = "0.0.1";
+  version = "0.1.0.0";
   src = ./.;
   isLibrary = false;
   isExecutable = true;
@@ -19,6 +19,6 @@ mkDerivation {
     wai-extra warp
   ];
   preConfigure = "hpack";
-  description = "A simple feed aggregator";
+  description = "Simple feed aggregator";
   license = stdenv.lib.licenses.isc;
 }

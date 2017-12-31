@@ -3,11 +3,18 @@
 -- see: https://github.com/sol/hpack
 
 name:           silly-planet
-version:        0.0.1
-synopsis:       A simple feed aggregator
+version:        0.1.0.0
+synopsis:       Simple feed aggregator
+category:       Web
+author:         Jonathan Curran
+maintainer:     joncfoo@gmail.com
 license:        ISC
+license-file:   LICENSE
 build-type:     Simple
 cabal-version:  >= 1.10
+
+extra-source-files:
+    ChangeLog.md
 
 executable silly-planet
   main-is: Main.hs
@@ -15,30 +22,31 @@ executable silly-planet
       src
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -O2 -threaded -rtsopts
   build-depends:
-      base
-    , aeson
-    , authenticate-oauth
-    , base64-bytestring
-    , containers
-    , cmdargs
-    , feed == 1.0.0.0
-    , filepath
-    , friendly-time
-    , http-client
-    , http-client-tls
-    , microlens-aeson
-    , microlens-platform
-    , protolude
-    , raw-strings-qq
-    , resource-pool
-    , Spock
-    , simple-logger
-    , sqlite-simple
-    , text
-    , time
-    , wai
-    , wai-extra
-    , warp
+      base ^>= 4.10
+    , aeson ^>= 1.2
+    , authenticate-oauth ^>= 1.6
+    , base64-bytestring ^>= 1.0
+    , containers ^>= 0.5
+    , cmdargs ^>= 0.10
+    , directory ^>= 1.3
+    , feed ^>= 1.0
+    , filepath ^>= 1.4
+    , friendly-time ^>= 0.4
+    , http-client ^>= 0.5
+    , http-client-tls ^>= 0.3
+    , microlens-aeson ^>= 2.2
+    , microlens-platform ^>= 0.3
+    , protolude ^>= 0.2
+    , raw-strings-qq ^>= 1.1
+    , resource-pool ^>= 0.2
+    , Spock ^>= 0.12
+    , simple-logger == 0.0.4
+    , sqlite-simple ^>= 0.4
+    , text ^>= 1.2
+    , time ^>= 1.8
+    , wai ^>= 3.2
+    , wai-extra ^>= 3.0
+    , warp ^>= 3.2
   other-modules:
       Args
   default-language: Haskell2010
